@@ -1,0 +1,67 @@
+<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>📱 폰가게 사장님</title><style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}body{margin:0;font-family:system-ui,sans-serif;background:linear-gradient(#ffe8f0,#e0f0ff);min-height:100vh;color:#223}
+#app{max-width:480px;margin:auto;padding:10px}.bar{display:flex;justify-content:space-between;font-weight:700;background:#fff;border-radius:12px;padding:8px 10px;box-shadow:0 2px 6px #0002;font-size:14px}
+.shop{position:relative;height:150px;margin:10px 0;border-radius:16px;background:var(--bg,#fff8e1);overflow:hidden;box-shadow:inset 0 -30px #d7ccc8}
+.cust{position:absolute;bottom:20px;left:20px;font-size:64px;transition:transform .3s}.bub{position:absolute;left:100px;top:10px;right:10px;background:#fff;border-radius:14px;padding:8px;font-size:13px;box-shadow:0 2px 6px #0003}
+.timer{height:8px;background:#ddd;border-radius:4px;overflow:hidden}.timer i{display:block;height:100%;background:#4caf50;transition:width .1s linear}
+h4{margin:10px 0 4px;font-size:14px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.grid.g4{grid-template-columns:repeat(4,1fr)}.grid.g2{grid-template-columns:1fr 1fr}
+button{font:inherit;border:0;border-radius:12px;padding:10px 4px;background:#fff;box-shadow:0 2px 0 #0002;font-size:13px;min-height:44px}button.on{background:#3f51b5;color:#fff}
+.go{width:100%;margin-top:10px;background:#ff4081;color:#fff;font-size:18px;font-weight:700;padding:14px}.ov{position:fixed;inset:0;background:#000a;display:flex;align-items:center;justify-content:center;z-index:9}
+.card{background:#fff;border-radius:18px;padding:20px;width:90%;max-width:400px;text-align:center}.fx{position:absolute;right:20px;bottom:30px;font-size:22px;font-weight:800;animation:up 1s forwards}
+@keyframes up{to{transform:translateY(-60px);opacity:0}}.small{font-size:12px;color:#667}
+</style></head><body><div id="app">
+<div class="bar"><span>📅 <b id="day">1</b>일차</span><span>💰 <b id="money">0</b>만</span><span>🎯 <b id="goal">0</b>만</span><span>😊 <b id="sat">100</b></span></div>
+<div class="shop" id="shop"><div class="cust" id="cust">🙂</div><div class="bub" id="bub"></div></div>
+<div class="timer"><i id="tm"></i></div><div class="small" id="info"></div>
+<h4>📱 기종</h4><div class="grid" id="phones"></div><h4>📶 요금제</h4><div class="grid g4" id="plans"></div><h4>🏷️ 할인</h4><div class="grid g2" id="discs"></div>
+<button class="go" id="sell">🤝 판매하기</button></div><div class="ov" id="ov"></div>
+<script>
+// 모든 수치는 가상의 게임 값입니다
+const PH=[{n:'갤럭시 S26',e:'🌌',p:130,r:45},{n:'아이폰 17',e:'🍎',p:150,r:35},{n:'폴드8',e:'📖',p:230,r:60},{n:'점프4',e:'🐸',p:40,r:25}];
+const PL=[{n:'37K',f:3.7,r:5},{n:'61K',f:6.1,r:15},{n:'90K',f:9,r:28},{n:'110K',f:11,r:40}];
+const DI=[{n:'공시지원금',k:'g'},{n:'선택약정',k:'s'}];const TEL=['SK','KT','LG U+'],TYPE=['신규','번호이동','기변'],FACES=['🧑','👩','👴','👵','🧑‍💼','👨‍🎓','👩‍🦰','🧔'];
+let S=JSON.parse(localStorage.getItem('pgSave')||'null');const best=()=>+localStorage.getItem('pgBest')||0;
+let st,c,sel,tLeft,tMax,tick,served;
+function fresh(){return{day:1,total:0,interior:0,staff:0,ad:0}}
+function $(i){return document.getElementById(i)}
+function build(id,arr,key,lab){$(id).innerHTML='';arr.forEach((x,i)=>{const b=document.createElement('button');b.innerHTML=lab(x);b.onclick=()=>{sel[key]=i;[...$(id).children].forEach((y,j)=>y.className=j==i?'on':'')};$(id).appendChild(b)})}
+function startDay(){st.money=0;st.sat=100;st.goal=Math.round(60+st.day*35);served=0;st.custN=5+st.day;$('shop').style.setProperty('--bg',['#fff8e1','#e8f5e9','#e3f2fd','#f3e5f5','#fffde7'][Math.min(st.interior,4)]);upd();next()}
+function upd(){$('day').textContent=st.day;$('money').textContent=Math.round(st.money);$('goal').textContent=st.goal;$('sat').textContent=Math.round(st.sat)}
+function next(){if(served>=st.custN)return endDay();sel={ph:-1,pl:-1,di:-1};['phones','plans','discs'].forEach(i=>[...$(i).children].forEach(y=>y.className=''));
+ const ph=Math.random()<.15?-1:Math.floor(Math.random()*4);const maxPlan=Math.floor(Math.random()*4);
+ c={face:FACES[Math.floor(Math.random()*FACES.length)],ph,maxPlan,tel:TEL[Math.floor(Math.random()*3)],type:TYPE[Math.floor(Math.random()*3)],budget:ph<0?60:PH[ph].p-20+Math.floor(Math.random()*40),pref:Math.random()<.5?'g':'s',pat:1};
+ $('cust').textContent=c.face;$('cust').style.transform='translateX(0)';
+ $('bub').innerHTML=`<b>${ph<0?'저렴한 폰 아무거나요':PH[ph].n+' 주세요!'}</b><br>💳 예산 ${c.budget}만 · ${c.tel} ${c.type}<br>📶 요금은 ${PL[maxPlan].n} 정도까지…<br>${c.pref=='g'?'💸 기계값 싸게!':'📉 매달 요금 싸게!'}`;
+ tMax=Math.max(5,13-st.day*.8)+st.staff*2;tLeft=tMax;clearInterval(tick);tick=setInterval(()=>{tLeft-=.1;$('tm').style.width=(tLeft/tMax*100)+'%';if(tLeft<=0){clearInterval(tick);result(-1)}},100);
+ $('info').textContent=`손님 ${served+1}/${st.custN} · 🏆 최고 ${best()}만`}
+function fx(t,col){const d=document.createElement('div');d.className='fx';d.style.color=col;d.textContent=t;$('shop').appendChild(d);setTimeout(()=>d.remove(),1000)}
+function sell(){if(sel.ph<0||sel.pl<0||sel.di<0){fx('다 골라주세요!','#f44');return}clearInterval(tick);result(0)}
+function result(timeout){let m=0,sat=0,msg;
+ if(timeout){sat=-15;msg='😤 너무 오래 기다렸어요!';$('cust').textContent='😤'}else{
+  const p=PH[sel.ph],pl=PL[sel.pl],g=DI[sel.di].k=='g';
+  const sub=g?p.r*.8+pl.r*.3:0; // 공시지원금은 매장 부담 일부
+  const cost=g?p.p-sub-10:p.p; m=p.r+pl.r+(c.type=='번호이동'?15:c.type=='신규'?8:0)-sub*.5;
+  sat=10; if(c.ph>=0&&sel.ph!=c.ph)sat-=25; if(c.ph<0&&sel.ph!=3)sat-=10;
+  if(cost>c.budget)sat-=Math.min(30,(cost-c.budget)/2);
+  const over=sel.pl-c.maxPlan; if(over==1){sat-=8;m+=5}else if(over>=2){sat-=40}
+  if(DI[sel.di].k==c.pref)sat+=8;else sat-=5; sat+=st.interior*2;
+  if(sat<-25){m=0;msg='💢 "됐어요, 다른 데 갈래요!"';$('cust').textContent='😡'}
+  else{m*=1+st.ad*.1;msg=sat>5?'😍 "사장님 최고!"':'🙂 "음… 살게요"';$('cust').textContent=sat>5?'😍':'🙂'}}
+ st.money+=m;st.sat=Math.max(0,Math.min(100,st.sat+sat/2));served++;upd();
+ fx((m>0?'+'+Math.round(m)+'만 ':'')+(sat>=0?'😊':'😠'),m>0?'#2e7d32':'#e53935');$('bub').innerHTML='<b>'+msg+'</b>';
+ setTimeout(()=>{$('cust').style.transform='translateX(400px)';setTimeout(next,350)},900)}
+function endDay(){clearInterval(tick);const ok=st.money>=st.goal&&st.sat>20;st.total+=Math.round(st.money);
+ if(st.total>best())localStorage.setItem('pgBest',st.total);
+ if(!ok){localStorage.removeItem('pgSave');return show(`<h2>💀 폐업…</h2><p>${st.day}일차 목표 ${st.goal}만 중 ${Math.round(st.money)}만 달성<br>만족도 ${Math.round(st.sat)}</p><p>누적 ${st.total}만 · 🏆 최고 ${best()}만</p><button class=go onclick="newGame()">다시 시작</button>`)}
+ st.cash=(st.cash||0)+Math.round(st.money-st.goal/2);
+ const up=(k,n,e,cost)=>`<button onclick="buy('${k}',${cost})" ${st.cash<cost?'disabled style=opacity:.4':''}>${e} ${n} Lv${st[k]}<br><small>${cost}만</small></button>`;
+ show(`<h2>🎉 ${st.day}일차 성공!</h2><p>매출 ${Math.round(st.money)}만 · 만족도 ${Math.round(st.sat)}<br>업그레이드 자금: <b>${st.cash}만</b></p><div class="grid">${up('interior','인테리어','🛋️',40+st.interior*40)}${up('staff','직원','🧑‍💼',50+st.staff*50)}${up('ad','전단광고','📣',30+st.ad*30)}</div><p class=small>인테리어: 만족도↑ · 직원: 시간↑ · 광고: 마진↑</p><button class=go onclick="st.day++;save();hide();startDay()">다음 날 ▶</button>`)}
+function buy(k,c){if(st.cash>=c){st.cash-=c;st[k]++;st.day;endDayShowAgain()}}
+function endDayShowAgain(){st.total-=Math.round(st.money);st.cash-=Math.round(st.money-st.goal/2);endDay()}
+function save(){localStorage.setItem('pgSave',JSON.stringify(st))}
+function show(h){$('ov').innerHTML='<div class=card>'+h+'</div>';$('ov').style.display='flex'}function hide(){$('ov').style.display='none'}
+function newGame(){st=fresh();hide();startDay()}
+build('phones',PH,'ph',x=>`${x.e}<br>${x.n}<br><small>${x.p}만</small>`);build('plans',PL,'pl',x=>x.n);build('discs',DI,'di',x=>x.n);$('sell').onclick=sell;
+show(`<h2>📱 폰가게 사장님</h2><p>손님 요청을 보고 <b>기종·요금제·할인</b>을 골라 팔아요!<br>비싼 요금제는 마진↑ 하지만 너무 올리면 손님이 화나서 떠나요 😡<br>하루 목표 매출을 달성하세요!</p><p class=small>※ 모든 수치는 가상의 게임 값입니다 · 🏆 최고 ${best()}만</p>${S?'<button class=go onclick="st=S;hide();startDay()">이어하기 ('+S.day+'일차)</button>':''}<button class=go onclick="newGame()">새 게임</button>`);
+</script></body></html>
